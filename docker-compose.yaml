@@ -1,0 +1,6 @@
+services:
+  db:
+    image: clickhouse/clickhouse-server
+    ports:
+      - '8123:8123'
+      - '9000:9000'
