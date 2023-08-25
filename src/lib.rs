@@ -15,7 +15,7 @@ impl<'client> Client<'client> {
     }
 
     pub async fn ping(&self) -> Result<bool> {
-        let response = reqwest::get("http://localhost:8123/ping").await?;
+        let response = reqwest::get(format!("{}/ping", self.server_url)).await?;
 
         let text = response.text().await?;
 
