@@ -34,14 +34,26 @@ impl<'client> Client<'client> {
 
     #[cfg(feature = "blocking")]
     pub fn execute(&self, query: impl Into<String>) -> Result<()> {
-        let response = reqwest::blocking::Client::new()
-            .post(self.server_url)
-            .body(query.into())
-            .send()?;
+        let mut retries = 0;
+        let body: String = query.into();
+        loop {
+            retries += 1;
+            let response = reqwest::blocking::Client::new()
+                .post(self.server_url)
+                .body(body.clone())
+                .send()?;
 
-        if !response.status().is_success() {
-            let body = response.text()?;
-            bail!("Error: {}", body);
+            if !response.status().is_success() {
+                if retries <= 3 {
+                    println!("Error: {}", response.text().unwrap());
+                    println!("Retrying {}/3", retries);
+                    continue;
+                } else {
+                    bail!("Error: {}", response.text()?);
+                }
+            } else {
+                break;
+            }
         }
 
         Ok(())
@@ -49,14 +61,27 @@ impl<'client> Client<'client> {
 
     #[cfg(not(feature = "blocking"))]
     pub async fn execute(&self, query: impl Into<String>) -> Result<()> {
-        let response = reqwest::Client::new()
-            .post(self.server_url)
-            .body(query.into())
-            .send()
-            .await?;
+        let mut retries = 0;
+        let body: String = query.into();
+        loop {
+            retries += 1;
+            let response = reqwest::Client::new()
+                .post(self.server_url)
+                .body(body.clone())
+                .send()
+                .await?;
 
-        if !response.status().is_success() {
-            bail!("Error: {}", response.text().await?);
+            if !response.status().is_success() {
+                if retries <= 3 {
+                    println!("Error: {}", response.text().await?);
+                    println!("Retrying {}/3", retries);
+                    continue;
+                } else {
+                    bail!("Error: {}", response.text().await?);
+                }
+            } else {
+                break;
+            }
         }
 
         Ok(())
