@@ -35,7 +35,12 @@ impl<'client> Client<'client> {
     #[cfg(feature = "blocking")]
     pub fn execute(&self, query: impl Into<String>) -> Result<()> {
         let mut retries = 0;
-        let body: String = query.into();
+
+        let query: String = query.into();
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(query.as_bytes())?;
+        let body = encoder.finish()?;
+
         loop {
             retries += 1;
             let response = reqwest::blocking::Client::new()
@@ -61,8 +66,17 @@ impl<'client> Client<'client> {
 
     #[cfg(not(feature = "blocking"))]
     pub async fn execute(&self, query: impl Into<String>) -> Result<()> {
+        use std::io::Write;
+
+        use flate2::Compression;
+
         let mut retries = 0;
-        let body: String = query.into();
+
+        let query: String = query.into();
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(query.as_bytes())?;
+        let body = encoder.finish()?;
+
         loop {
             retries += 1;
             let response = reqwest::Client::new()
@@ -92,6 +106,8 @@ impl<'client> Client<'client> {
     where
         TResult: serde::de::DeserializeOwned,
     {
+        use flate2::Compression;
+
         let query = query.into();
         if query.is_empty() {
             bail!("Query is empty");
@@ -100,9 +116,13 @@ impl<'client> Client<'client> {
             bail!("Query must contains FORMAT JSON");
         }
 
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(query.as_bytes())?;
+        let body = encoder.finish()?;
+
         let response = reqwest::blocking::Client::new()
             .post(self.server_url)
-            .body(query)
+            .body(body)
             .send()?;
 
         if !response.status().is_success() {
@@ -117,6 +137,9 @@ impl<'client> Client<'client> {
     where
         TResult: serde::de::DeserializeOwned,
     {
+        use flate2::Compression;
+        use std::io::Write;
+
         let query = query.into();
         if query.is_empty() {
             bail!("Query is empty");
@@ -125,9 +148,13 @@ impl<'client> Client<'client> {
             bail!("Query must contains FORMAT JSON");
         }
 
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(query.as_bytes())?;
+        let body = encoder.finish()?;
+
         let response = reqwest::Client::new()
             .post(self.server_url)
-            .body(query)
+            .body(body)
             .send()
             .await?;
 
