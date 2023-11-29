@@ -3,7 +3,7 @@ use clickhouse_rs::Client;
 
 #[cfg(not(feature = "blocking"))]
 async fn seed() -> Result<()> {
-    let client = Client::new("http://localhost:8123");
+    let client = Client::new("http://localhost:8123".to_string());
     client.execute("DROP TABLE test").await?;
     client.execute("CREATE TABLE IF NOT EXISTS test(name String, age Int32, PRIMARY KEY name) ENGINE = MergeTree;").await?;
 
@@ -80,7 +80,7 @@ mod tests {
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn test_ping() -> Result<()> {
-        let client = Client::new("http://localhost:8123");
+        let client = Client::new("http://localhost:8123".to_string());
         let is_ok = client.ping().await?;
         assert!(is_ok);
         Ok(())
@@ -89,7 +89,7 @@ mod tests {
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn test_create_table() -> Result<()> {
-        let client = Client::new("http://localhost:8123");
+        let client = Client::new("http://localhost:8123".to_string());
 
         client
             .execute(
@@ -110,7 +110,7 @@ mod tests {
             pub name: String,
             pub age: i32,
         }
-        let client = Client::new("http://localhost:8123");
+        let client = Client::new("http://localhost:8123".to_string());
 
         client
             .execute("INSERT INTO test(name, age) VALUES ('John', 42) ;")
