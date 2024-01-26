@@ -97,7 +97,7 @@ impl Client {
                     println!("Retrying {}/3", retries);
                     continue;
                 } else {
-                    bail!("Error: {}", response.text().await?);
+                    bail!("Error: {}\nQuery: {}", response.text().await?, query);
                 }
             } else {
                 break;
