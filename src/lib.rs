@@ -2,6 +2,7 @@ mod entities;
 use anyhow::{bail, Ok, Result};
 use entities::QueryResult;
 
+#[derive(Debug)]
 pub struct Client {
     server_url: String,
 }
