@@ -5,6 +5,17 @@ use entities::QueryResult;
 pub struct Client {
     server_url: String,
 }
+
+impl DisplayAs for Client {
+    fn fmt_as(
+        &self,
+        t: datafusion::physical_plan::DisplayFormatType,
+        f: &mut std::fmt::Formatter,
+    ) -> std::fmt::Result {
+        write!(f, "Clickhouse Client")
+    }
+}
+
 impl Client {
     /// Creates a new [`Client`].
     /// server_url: The url of the server to connect to. It could contains user and password if needs. Example: http://user:password@localhost:8123
