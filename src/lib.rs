@@ -180,4 +180,67 @@ impl Client {
 
         Ok(response.json::<QueryResult<TResult>>().await?)
     }
+
+    #[cfg(not(feature = "blocking"))]
+    pub async fn send(&self, query: &str) -> Result<reqwest::Response> {
+        use flate2::Compression;
+        use reqwest::header::{self, HeaderMap};
+        use std::io::Write;
+        use tracing::debug;
+
+        debug!("Query: {}", query);
+
+        if query.is_empty() {
+            bail!("Query is empty");
+        }
+        if !query.contains("FORMAT JSON") {
+            bail!("Query must contains FORMAT JSON");
+        }
+
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(query.as_bytes())?;
+        let body = encoder.finish()?;
+
+        reqwest::Client::new()
+            .post(self.server_url.clone())
+            .headers(HeaderMap::from_iter(vec![(
+                header::CONTENT_ENCODING,
+                "gzip".parse().unwrap(),
+            )]))
+            .body(body)
+            .send()
+            .await
+            .map_err(anyhow::Error::from)
+    }
+
+    #[cfg(feature = "blocking")]
+    pub async fn send(&self, query: &str) -> Result<reqwest::Response> {
+        use flate2::Compression;
+        use reqwest::header::{self, HeaderMap};
+        use std::io::Write;
+        use tracing::debug;
+
+        debug!("Query: {}", query);
+
+        if query.is_empty() {
+            bail!("Query is empty");
+        }
+        if !query.contains("FORMAT JSON") {
+            bail!("Query must contains FORMAT JSON");
+        }
+
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(query.as_bytes())?;
+        let body = encoder.finish()?;
+
+        reqwest::blocking::Client::new()
+            .post(self.server_url.clone())
+            .headers(HeaderMap::from_iter(vec![(
+                header::CONTENT_ENCODING,
+                "gzip".parse().unwrap(),
+            )]))
+            .body(body)
+            .send()
+            .map_err(anyhow::Error::from)
+    }
 }
